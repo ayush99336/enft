@@ -4,5 +4,5 @@ import { createCodamaConfig } from './src/create-codama-config.js'
 
 export default createCodamaConfig({
   clientJs: 'anchor/src/client/js/generated',
-  idl: 'target/idl/enft.json',
+  idl: 'target/idl/anchor_nft_staking_q4_25.json',
 })

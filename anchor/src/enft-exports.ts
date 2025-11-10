@@ -2,7 +2,7 @@
 import { Account, getBase58Decoder, SolanaClient } from 'gill'
 import { getProgramAccountsDecoded } from './helpers/get-program-accounts-decoded'
 import { Enft, ENFT_DISCRIMINATOR, ENFT_PROGRAM_ADDRESS, getEnftDecoder } from './client/js'
-import EnftIDL from '../target/idl/enft.json'
+import EnftIDL from '../target/idl/anchor_nft_staking_q4_25.json'
 
 export type EnftAccount = Account<Enft, string>
 

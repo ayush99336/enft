@@ -1,70 +1,50 @@
-#![allow(clippy::result_large_err)]
-
 use anchor_lang::prelude::*;
 
-declare_id!("Count3AcZucFDPSFBAeHkQ6AvttieKUkyJ8HiQGhQwe");
+mod errors;
+mod instructions;
+mod state;
 
+use instructions::*;
+
+declare_id!("Fd36H61XWfjBMHiN5hJcfUdSeA4i1ZMdpgTLxY5QfiiN");
 #[program]
-pub mod enft {
+pub mod anchor_nft_staking_q4_25 {
     use super::*;
 
-    pub fn close(_ctx: Context<CloseEnft>) -> Result<()> {
-        Ok(())
+    pub fn initialize_config(
+        ctx: Context<InitializeConfig>,
+        points_per_stake: u8,
+        max_stake: u8,
+        freeze_period: u32,
+    ) -> Result<()> {
+        ctx.accounts
+            .initialize_config(points_per_stake, max_stake, freeze_period, &ctx.bumps)
     }
 
-    pub fn decrement(ctx: Context<Update>) -> Result<()> {
-        ctx.accounts.enft.count = ctx.accounts.enft.count.checked_sub(1).unwrap();
-        Ok(())
+    pub fn initialize_user(ctx: Context<Initialize>) -> Result<()> {
+        ctx.accounts.initialize_user_account(&ctx.bumps)
     }
 
-    pub fn increment(ctx: Context<Update>) -> Result<()> {
-        ctx.accounts.enft.count = ctx.accounts.enft.count.checked_add(1).unwrap();
-        Ok(())
+    pub fn create_collection(
+        ctx: Context<CreateCollection>,
+        args: CreateCollectionArgs,
+    ) -> Result<()> {
+        ctx.accounts.create_collection(args, &ctx.bumps)
     }
 
-    pub fn initialize(_ctx: Context<InitializeEnft>) -> Result<()> {
-        Ok(())
+    pub fn mint_nft(ctx: Context<MintNft>) -> Result<()> {
+        ctx.accounts.mint_nft()
     }
 
-    pub fn set(ctx: Context<Update>, value: u8) -> Result<()> {
-        ctx.accounts.enft.count = value.clone();
-        Ok(())
+    pub fn stake(ctx: Context<Stake>) -> Result<()> {
+        ctx.accounts.stake(&ctx.bumps)
     }
-}
 
-#[derive(Accounts)]
-pub struct InitializeEnft<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
+    pub fn unstake(ctx: Context<Unstake>) -> Result<()> {
+        ctx.accounts.unstake()
+    }
 
-    #[account(
-  init,
-  space = 8 + Enft::INIT_SPACE,
-  payer = payer
-    )]
-    pub enft: Account<'info, Enft>,
-    pub system_program: Program<'info, System>,
-}
-#[derive(Accounts)]
-pub struct CloseEnft<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-
-    #[account(
-  mut,
-  close = payer, // close account and return lamports to payer
-    )]
-    pub enft: Account<'info, Enft>,
-}
-
-#[derive(Accounts)]
-pub struct Update<'info> {
-    #[account(mut)]
-    pub enft: Account<'info, Enft>,
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct Enft {
-    count: u8,
+    pub fn claim(ctx: Context<Claim>) -> Result<()> {
+        ctx.accounts.claim()
+    }
 }

@@ -1,31 +1,54 @@
 import { useSolana } from '@/components/solana/use-solana'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { UiWalletAccount, useWalletUiSigner } from '@wallet-ui/react'
-import { useWalletUiSignAndSend } from '@wallet-ui/react-gill'
-import { install as installEd25519 } from '@solana/webcrypto-ed25519-polyfill'
-import { generateKeyPairSigner } from 'gill'
-import { getInitializeInstruction } from '@project/anchor'
-import { toastTx } from '@/components/toast-tx'
-import { toast } from 'sonner'
+import { getInitializeConfigInstruction, ANCHOR_NFT_STAKING_Q425_PROGRAM_ADDRESS } from '@project/anchor'
+import { useTransactionToast } from '@/components/use-transaction-toast'
+import { getProgramDerivedAddress, pipe, getBase58Encoder } from 'gill'
 
-// polyfill ed25519 for browsers (to allow `generateKeyPairSigner` to work)
-installEd25519()
-
-export function useEnftInitializeMutation({ account }: { account: UiWalletAccount }) {
-  const { cluster } = useSolana()
+export function useEnftInitializeMutation() {
+  const { client, account } = useSolana()
+  const transactionToast = useTransactionToast()
   const queryClient = useQueryClient()
-  const signer = useWalletUiSigner({ account })
-  const signAndSend = useWalletUiSignAndSend()
 
   return useMutation({
-    mutationFn: async () => {
-      const enft = await generateKeyPairSigner()
-      return await signAndSend(getInitializeInstruction({ payer: signer, enft }), signer)
+    mutationKey: ['enft', 'initialize', { cluster: client.rpc.getCluster() }],
+    mutationFn: async ({
+      pointsPerStake,
+      maxStake,
+      freezePeriod,
+    }: {
+      pointsPerStake: number
+      maxStake: number
+      freezePeriod: number
+    }) => {
+      if (!account) throw new Error('Wallet not connected')
+
+      const [configPda] = await getProgramDerivedAddress({
+        programAddress: ANCHOR_NFT_STAKING_Q425_PROGRAM_ADDRESS,
+        seeds: [new TextEncoder().encode('config')],
+      })
+
+      const [rewardMintPda] = await getProgramDerivedAddress({
+        programAddress: ANCHOR_NFT_STAKING_Q425_PROGRAM_ADDRESS,
+        seeds: [new TextEncoder().encode('rewards'), pipe(configPda, getBase58Encoder().encode)],
+      })
+
+      const instruction = getInitializeConfigInstruction({
+        admin: account.address,
+        config: configPda,
+        rewardMint: rewardMintPda,
+        pointsPerStake,
+        maxStake,
+        freezePeriod,
+      })
+
+      return await client.sign([instruction]).sendAndConfirm(client.rpc)
     },
-    onSuccess: async (tx) => {
-      toastTx(tx)
-      await queryClient.invalidateQueries({ queryKey: ['enft', 'accounts', { cluster }] })
+    onSuccess: (signature) => {
+      transactionToast(signature)
+      queryClient.invalidateQueries({ queryKey: ['stake-config'] })
     },
-    onError: () => toast.error('Failed to run program'),
+    onError: (error) => {
+      console.error('Failed to initialize config:', error)
+    },
   })
 }
