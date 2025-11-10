@@ -22,7 +22,7 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@project/anchor": ["anchor/src"],
+      "@project/anchor": ["anchor/src/client/js/generated"],
       "@/*": ["./src/*"]
     }
   },

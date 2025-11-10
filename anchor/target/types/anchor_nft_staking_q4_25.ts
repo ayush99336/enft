@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/anchor_nft_staking_q4_25.json`.
  */
 export type AnchorNftStakingQ425 = {
-  "address": "Fd36H61XWfjBMHiN5hJcfUdSeA4i1ZMdpgTLxY5QfiiN",
+  "address": "B4Sxiq4V4oLiSPf2EF6SPkb3NrgJ9WxtgwJdyHiujnEJ",
   "metadata": {
     "name": "anchorNftStakingQ425",
     "version": "0.1.0",

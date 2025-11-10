@@ -24,7 +24,7 @@ import {
 } from '../instructions';
 
 export const ANCHOR_NFT_STAKING_Q425_PROGRAM_ADDRESS =
-  'Fd36H61XWfjBMHiN5hJcfUdSeA4i1ZMdpgTLxY5QfiiN' as Address<'Fd36H61XWfjBMHiN5hJcfUdSeA4i1ZMdpgTLxY5QfiiN'>;
+  'B4Sxiq4V4oLiSPf2EF6SPkb3NrgJ9WxtgwJdyHiujnEJ' as Address<'B4Sxiq4V4oLiSPf2EF6SPkb3NrgJ9WxtgwJdyHiujnEJ'>;
 
 export enum AnchorNftStakingQ425Account {
   CollectionInfo,
@@ -183,7 +183,7 @@ export function identifyAnchorNftStakingQ425Instruction(
 }
 
 export type ParsedAnchorNftStakingQ425Instruction<
-  TProgram extends string = 'Fd36H61XWfjBMHiN5hJcfUdSeA4i1ZMdpgTLxY5QfiiN',
+  TProgram extends string = 'B4Sxiq4V4oLiSPf2EF6SPkb3NrgJ9WxtgwJdyHiujnEJ',
 > =
   | ({
       instructionType: AnchorNftStakingQ425Instruction.Claim;

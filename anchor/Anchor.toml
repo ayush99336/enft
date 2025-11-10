@@ -6,8 +6,11 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
+[programs.devnet]
+anchor_nft_staking_q4_25 = "B4Sxiq4V4oLiSPf2EF6SPkb3NrgJ9WxtgwJdyHiujnEJ"
+
 [programs.localnet]
-anchor_nft_staking_q4_25 = "Fd36H61XWfjBMHiN5hJcfUdSeA4i1ZMdpgTLxY5QfiiN"
+anchor_nft_staking_q4_25 = "B4Sxiq4V4oLiSPf2EF6SPkb3NrgJ9WxtgwJdyHiujnEJ"
 
 [registry]
 url = "https://api.apr.dev"

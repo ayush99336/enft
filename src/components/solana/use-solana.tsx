@@ -13,5 +13,6 @@ export function useSolana() {
   return {
     ...walletUi,
     client,
+    clusterId: walletUi.cluster.id,
   }
 }

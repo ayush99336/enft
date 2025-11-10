@@ -1,20 +1,15 @@
 // Here we export some useful types and functions for interacting with the Anchor program.
-import { Account, getBase58Decoder, SolanaClient } from 'gill'
-import { getProgramAccountsDecoded } from './helpers/get-program-accounts-decoded'
-import { Enft, ENFT_DISCRIMINATOR, ENFT_PROGRAM_ADDRESS, getEnftDecoder } from './client/js'
+import { SolanaClient } from 'gill'
+
+// Re-export everything from the generated client
+export * from './client/js/generated'
+
+// Re-export the IDL
 import EnftIDL from '../target/idl/anchor_nft_staking_q4_25.json'
-
-export type EnftAccount = Account<Enft, string>
-
-// Re-export the generated IDL and type
 export { EnftIDL }
 
-export * from './client/js'
+// Export program address constant
+export { ANCHOR_NFT_STAKING_Q425_PROGRAM_ADDRESS } from './client/js/generated'
 
-export function getEnftProgramAccounts(rpc: SolanaClient['rpc']) {
-  return getProgramAccountsDecoded(rpc, {
-    decoder: getEnftDecoder(),
-    filter: getBase58Decoder().decode(ENFT_DISCRIMINATOR),
-    programAddress: ENFT_PROGRAM_ADDRESS,
-  })
-}
+// Type helpers
+export type { StakeConfig, UserAccount, StakeAccount, CollectionInfo } from './client/js/generated'
