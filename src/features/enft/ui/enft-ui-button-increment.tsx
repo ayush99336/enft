@@ -1,14 +1,6 @@
-import { EnftAccount } from '@project/anchor'
+// Legacy increment button removed: staking program does not implement increment instruction.
 import { UiWalletAccount } from '@wallet-ui/react'
-import { Button } from '@/components/ui/button'
-import { useEnftIncrementMutation } from '../data-access/use-enft-increment-mutation'
 
-export function EnftUiButtonIncrement({ account, enft }: { account: UiWalletAccount; enft: EnftAccount }) {
-  const incrementMutation = useEnftIncrementMutation({ account, enft })
-
-  return (
-    <Button variant="outline" onClick={() => incrementMutation.mutateAsync()} disabled={incrementMutation.isPending}>
-      Increment
-    </Button>
-  )
+export function EnftUiButtonIncrement(_props: { account: UiWalletAccount }) {
+  return null
 }

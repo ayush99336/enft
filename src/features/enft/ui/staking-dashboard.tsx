@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Loader2, Coins, Trophy, Lock, TrendingUp } from 'lucide-react'
 import { NftStakingSection } from './nft-staking-section'
+import { useRewardBalance } from '../data-access/use-reward-balance'
+import { AppExplorerLink } from '@/components/app-explorer-link'
+import { type Address } from 'gill'
 
 interface StakingDashboardProps {
   account: UiWalletAccount
@@ -17,6 +20,7 @@ export function StakingDashboard({ account }: StakingDashboardProps) {
   const stakeConfigQuery = useStakeConfig()
   const initializeUserMutation = useInitializeUserMutation()
   const claimMutation = useClaimMutation()
+  const reward = useRewardBalance(account.address as Address)
 
   const handleInitializeUser = () => {
     initializeUserMutation.mutate()
@@ -132,6 +136,22 @@ export function StakingDashboard({ account }: StakingDashboardProps) {
             <p className="text-xs text-muted-foreground">Days lock period</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reward Token</CardTitle>
+            <Coins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{reward.isLoading ? '—' : reward.amount.toFixed(6)}</div>
+            <p className="text-xs text-muted-foreground">
+              Balance {reward.decimals ? `(decimals ${reward.decimals})` : ''}
+            </p>
+            <div className="text-xs mt-2 space-x-2">
+              {reward.mintAddress && <AppExplorerLink address={reward.mintAddress} label="Mint" />}
+              {reward.ataAddress && <AppExplorerLink address={reward.ataAddress} label="ATA" />}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Claim Rewards Section */}
@@ -144,12 +164,7 @@ export function StakingDashboard({ account }: StakingDashboardProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button
-              onClick={handleClaim}
-              disabled={claimMutation.isPending}
-              size="lg"
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={handleClaim} disabled={claimMutation.isPending} size="lg" className="w-full sm:w-auto">
               {claimMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,0 +1,9 @@
+
+    Finished `release` profile [optimized] target(s) in 0.34s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (/home/ayush99336/Desktop/nftstake/enft/anchor/target/debug/deps/anchor_nft_staking_q4_25-d5ad5772b09aa807)
+Deploying cluster: https://api.devnet.solana.com
+Upgrade authority: /home/ayush99336/.config/solana/id.json
+Deploying program "anchor_nft_staking_q4_25"...
+Program path: /home/ayush99336/Desktop/nftstake/enft/anchor/target/deploy/anchor_nft_staking_q4_25.so...
+Program Id: B4Sxiq4V4oLiSPf2EF6SPkb3NrgJ9WxtgwJdyHiujnEJ

@@ -1,15 +1,6 @@
-import { EnftAccount } from '@project/anchor'
+// Legacy decrement button removed: staking program does not implement decrement instruction.
 import { UiWalletAccount } from '@wallet-ui/react'
-import { Button } from '@/components/ui/button'
 
-import { useEnftDecrementMutation } from '../data-access/use-enft-decrement-mutation'
-
-export function EnftUiButtonDecrement({ account, enft }: { account: UiWalletAccount; enft: EnftAccount }) {
-  const decrementMutation = useEnftDecrementMutation({ account, enft })
-
-  return (
-    <Button variant="outline" onClick={() => decrementMutation.mutateAsync()} disabled={decrementMutation.isPending}>
-      Decrement
-    </Button>
-  )
+export function EnftUiButtonDecrement(_props: { account: UiWalletAccount }) {
+  return null
 }

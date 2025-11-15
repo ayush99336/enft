@@ -5,8 +5,8 @@ import { SolanaClient } from 'gill'
 export * from './client/js/generated'
 
 // Re-export the IDL
-import EnftIDL from '../target/idl/anchor_nft_staking_q4_25.json'
-export { EnftIDL }
+import AnchorNftStakingQ425IDL from '../target/idl/anchor_nft_staking_q4_25.json'
+export { AnchorNftStakingQ425IDL as IDL }
 
 // Export program address constant
 export { ANCHOR_NFT_STAKING_Q425_PROGRAM_ADDRESS } from './client/js/generated'

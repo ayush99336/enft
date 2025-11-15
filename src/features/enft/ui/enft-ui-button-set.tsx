@@ -1,11 +1,11 @@
-import { EnftAccount } from '@project/anchor'
+/* Legacy set button removed: staking program does not implement set instruction. */
 import { UiWalletAccount } from '@wallet-ui/react'
 import { Button } from '@/components/ui/button'
 
 import { useEnftSetMutation } from '@/features/enft/data-access/use-enft-set-mutation'
 
 export function EnftUiButtonSet({ account, enft }: { account: UiWalletAccount; enft: EnftAccount }) {
-  const setMutation = useEnftSetMutation({ account, enft })
+  return null
 
   return (
     <Button

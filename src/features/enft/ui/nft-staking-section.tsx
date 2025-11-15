@@ -4,56 +4,151 @@ import { Button } from '@/components/ui/button'
 import { Loader2, Lock, Unlock } from 'lucide-react'
 import { useStakeMutation } from '../data-access/use-stake-mutation'
 import { useUnstakeMutation } from '../data-access/use-unstake-mutation'
-import { useState } from 'react'
+import { useWalletAssets } from '../data-access/use-wallet-assets'
+import { useStakeStatus } from '../data-access/use-stake-status'
 import { type Address } from 'gill'
 
+type StakeConfigView = { data: { freezePeriod: number; maxStake: number } }
+type UserAccountView = { data: { amountStaked: number } }
 interface NftStakingSectionProps {
   account: UiWalletAccount
-  userAccount: any
-  stakeConfig: any
+  userAccount: UserAccountView
+  stakeConfig: StakeConfigView
 }
 
 export function NftStakingSection({ account, userAccount, stakeConfig }: NftStakingSectionProps) {
   const stakeMutation = useStakeMutation()
   const unstakeMutation = useUnstakeMutation()
-  const [selectedNft, setSelectedNft] = useState<string | null>(null)
 
-  // Mock NFT data - In production, you would fetch actual NFTs from the user's wallet
-  // using DAS API or similar service
-  const mockWalletNfts = [
-    {
-      address: '7K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkJ',
-      name: 'Cool NFT #1',
-      image: 'https://via.placeholder.com/300x300/6366f1/ffffff?text=NFT+1',
-      collection: '5K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkK',
-      collectionName: 'Cool Collection',
-    },
-    {
-      address: '8K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkJ',
-      name: 'Cool NFT #2',
-      image: 'https://via.placeholder.com/300x300/8b5cf6/ffffff?text=NFT+2',
-      collection: '5K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkK',
-      collectionName: 'Cool Collection',
-    },
-    {
-      address: '9K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkJ',
-      name: 'Epic NFT #1',
-      image: 'https://via.placeholder.com/300x300/ec4899/ffffff?text=NFT+3',
-      collection: '6K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkK',
-      collectionName: 'Epic Collection',
-    },
-  ]
+  // Fetch wallet assets from DAS
+  const assetsQuery = useWalletAssets({ ownerAddress: account.address })
 
-  const mockStakedNfts = [
-    {
-      address: '6K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkJ',
-      name: 'Staked NFT #1',
-      image: 'https://via.placeholder.com/300x300/10b981/ffffff?text=Staked+1',
-      collection: '5K4AxNzHkVKVqZqXkKMVP8wUdGPkHGqW1wKJkJkJkJkK',
-      collectionName: 'Cool Collection',
-      stakedAt: Date.now() - 86400000 * 2, // 2 days ago
-    },
-  ]
+  // Helpers
+  const formatTimeRemaining = (seconds: number) => {
+    if (seconds <= 0) return 'Ready to unstake'
+    const days = Math.floor(seconds / 86400)
+    const hours = Math.floor((seconds % 86400) / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    if (days > 0) return `${days}d ${hours}h remaining`
+    if (hours > 0) return `${hours}h ${minutes}m remaining`
+    return `${minutes}m remaining`
+  }
+
+  // Child components to evaluate stake status per asset
+  function StakedAssetCard({
+    asset,
+  }: {
+    asset: { address: string; name?: string; image?: string; collectionAddress?: string; collectionName?: string }
+  }) {
+    const stakeStatus = useStakeStatus({
+      assetAddress: asset.address as Address,
+      freezePeriodSeconds: stakeConfig.data.freezePeriod,
+    })
+    if (!stakeStatus.data?.staked) return null
+
+    const unlocked = stakeStatus.data?.canUnstake ?? false
+    const remaining = stakeStatus.data?.timeRemainingSeconds ?? 0
+
+    return (
+      <div key={asset.address} className="border rounded-lg overflow-hidden transition-all hover:shadow-lg">
+        <div className="aspect-square relative">
+          {asset.image ? (
+            <img src={asset.image} alt={asset.name ?? asset.address} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted text-xs p-2 break-all">
+              {asset.name ?? asset.address}
+            </div>
+          )}
+          {!unlocked && (
+            <div className="absolute top-2 right-2 bg-yellow-500/90 text-white px-2 py-1 rounded text-xs font-medium">
+              <Lock className="h-3 w-3 inline mr-1" />
+              Locked
+            </div>
+          )}
+          {unlocked && (
+            <div className="absolute top-2 right-2 bg-green-500/90 text-white px-2 py-1 rounded text-xs font-medium">
+              <Unlock className="h-3 w-3 inline mr-1" />
+              Ready
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="font-semibold text-sm mb-1 truncate">{asset.name ?? asset.address}</h3>
+          <p className="text-xs text-muted-foreground mb-3 truncate">{asset.collectionName ?? 'Unknown collection'}</p>
+          <p className="text-xs text-muted-foreground mb-3">{formatTimeRemaining(remaining)}</p>
+          <Button
+            onClick={() => handleUnstake(asset.address, asset.collectionAddress ?? '')}
+            disabled={!unlocked || unstakeMutation.isPending}
+            variant={unlocked ? 'default' : 'secondary'}
+            size="sm"
+            className="w-full"
+          >
+            {unstakeMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                Unstaking...
+              </>
+            ) : (
+              <>
+                <Unlock className="mr-2 h-3 w-3" />
+                {unlocked ? 'Unstake' : 'Locked'}
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  function AvailableAssetCard({
+    asset,
+    isMaxStaked,
+  }: {
+    asset: { address: string; name?: string; image?: string; collectionAddress?: string; collectionName?: string }
+    isMaxStaked: boolean
+  }) {
+    const stakeStatus = useStakeStatus({
+      assetAddress: asset.address as Address,
+      freezePeriodSeconds: stakeConfig.data.freezePeriod,
+    })
+    if (stakeStatus.data?.staked) return null
+
+    return (
+      <div key={asset.address} className="border rounded-lg overflow-hidden transition-all hover:shadow-lg">
+        <div className="aspect-square relative">
+          {asset.image ? (
+            <img src={asset.image} alt={asset.name ?? asset.address} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted text-xs p-2 break-all">
+              {asset.name ?? asset.address}
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="font-semibold text-sm mb-1 truncate">{asset.name ?? asset.address}</h3>
+          <p className="text-xs text-muted-foreground mb-3 truncate">{asset.collectionName ?? 'Unknown collection'}</p>
+          <Button
+            onClick={() => handleStake(asset.address, asset.collectionAddress ?? '')}
+            disabled={isMaxStaked || stakeMutation.isPending}
+            size="sm"
+            className="w-full"
+          >
+            {stakeMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                Staking...
+              </>
+            ) : (
+              <>
+                <Lock className="mr-2 h-3 w-3" />
+                Stake NFT
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const handleStake = (nftAddress: string, collectionAddress: string) => {
     stakeMutation.mutate({ assetAddress: nftAddress as Address, collectionAddress: collectionAddress as Address })
@@ -63,24 +158,9 @@ export function NftStakingSection({ account, userAccount, stakeConfig }: NftStak
     unstakeMutation.mutate({ assetAddress: nftAddress as Address, collectionAddress: collectionAddress as Address })
   }
 
-  const canUnstake = (stakedAt: number) => {
-    const elapsed = (Date.now() - stakedAt) / 1000
-    return elapsed >= stakeConfig.data.freezePeriod
-  }
+  // canUnstake handled by useStakeStatus in StakedAssetCard
 
-  const getTimeRemaining = (stakedAt: number) => {
-    const elapsed = (Date.now() - stakedAt) / 1000
-    const remaining = stakeConfig.data.freezePeriod - elapsed
-    if (remaining <= 0) return 'Ready to unstake'
-
-    const days = Math.floor(remaining / 86400)
-    const hours = Math.floor((remaining % 86400) / 3600)
-    const minutes = Math.floor((remaining % 3600) / 60)
-
-    if (days > 0) return `${days}d ${hours}h remaining`
-    if (hours > 0) return `${hours}h ${minutes}m remaining`
-    return `${minutes}m remaining`
-  }
+  // time remaining handled by useStakeStatus in StakedAssetCard
 
   const isMaxStaked = userAccount.data.amountStaked >= stakeConfig.data.maxStake
 
@@ -93,60 +173,15 @@ export function NftStakingSection({ account, userAccount, stakeConfig }: NftStak
           <CardDescription>NFTs currently earning rewards. Check the freeze period before unstaking.</CardDescription>
         </CardHeader>
         <CardContent>
-          {mockStakedNfts.length === 0 ? (
+          {assetsQuery.isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
-              <Lock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>You don't have any staked NFTs yet.</p>
-              <p className="text-sm mt-2">Stake NFTs below to start earning rewards!</p>
+              <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {mockStakedNfts.map((nft) => {
-                const unlocked = canUnstake(nft.stakedAt)
-                return (
-                  <div key={nft.address} className="border rounded-lg overflow-hidden transition-all hover:shadow-lg">
-                    <div className="aspect-square relative">
-                      <img src={nft.image} alt={nft.name} className="w-full h-full object-cover" />
-                      {!unlocked && (
-                        <div className="absolute top-2 right-2 bg-yellow-500/90 text-white px-2 py-1 rounded text-xs font-medium">
-                          <Lock className="h-3 w-3 inline mr-1" />
-                          Locked
-                        </div>
-                      )}
-                      {unlocked && (
-                        <div className="absolute top-2 right-2 bg-green-500/90 text-white px-2 py-1 rounded text-xs font-medium">
-                          <Unlock className="h-3 w-3 inline mr-1" />
-                          Ready
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-sm mb-1 truncate">{nft.name}</h3>
-                      <p className="text-xs text-muted-foreground mb-3 truncate">{nft.collectionName}</p>
-                      <p className="text-xs text-muted-foreground mb-3">{getTimeRemaining(nft.stakedAt)}</p>
-                      <Button
-                        onClick={() => handleUnstake(nft.address, nft.collection)}
-                        disabled={!unlocked || unstakeMutation.isPending}
-                        variant={unlocked ? 'default' : 'secondary'}
-                        size="sm"
-                        className="w-full"
-                      >
-                        {unstakeMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                            Unstaking...
-                          </>
-                        ) : (
-                          <>
-                            <Unlock className="mr-2 h-3 w-3" />
-                            {unlocked ? 'Unstake' : 'Locked'}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
+              {(assetsQuery.data ?? []).map((asset) => (
+                <StakedAssetCard key={asset.address} asset={asset} />
+              ))}
             </div>
           )}
         </CardContent>
@@ -166,41 +201,19 @@ export function NftStakingSection({ account, userAccount, stakeConfig }: NftStak
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {mockWalletNfts.length === 0 ? (
+          {assetsQuery.isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (assetsQuery.data ?? []).length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No eligible NFTs found in your wallet.</p>
               <p className="text-sm mt-2">Make sure you have NFTs from supported collections.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {mockWalletNfts.map((nft) => (
-                <div key={nft.address} className="border rounded-lg overflow-hidden transition-all hover:shadow-lg">
-                  <div className="aspect-square relative">
-                    <img src={nft.image} alt={nft.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-sm mb-1 truncate">{nft.name}</h3>
-                    <p className="text-xs text-muted-foreground mb-3 truncate">{nft.collectionName}</p>
-                    <Button
-                      onClick={() => handleStake(nft.address, nft.collection)}
-                      disabled={isMaxStaked || stakeMutation.isPending}
-                      size="sm"
-                      className="w-full"
-                    >
-                      {stakeMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                          Staking...
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="mr-2 h-3 w-3" />
-                          Stake NFT
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+              {(assetsQuery.data ?? []).map((asset) => (
+                <AvailableAssetCard key={asset.address} asset={asset} isMaxStaked={isMaxStaked} />
               ))}
             </div>
           )}

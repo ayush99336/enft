@@ -57,12 +57,24 @@ export function useClaimMutation() {
       const signatureBytes = await signAndSendTransactionMessageWithSigners(transaction)
       const signature = getBase58Decoder().decode(signatureBytes)
 
+      // Wait for confirmation (simple poll up to ~15s).
+      for (let i = 0; i < 10; i++) {
+        const statusResp = await client.rpc.getSignatureStatuses([signature]).send()
+        const st = statusResp.value?.[0]
+        if (st?.confirmationStatus === 'confirmed' || st?.confirmationStatus === 'finalized') break
+        await new Promise((r) => setTimeout(r, 1500))
+      }
+
       return signature
     },
     onSuccess: (signature) => {
       transactionToast(signature)
+      // Invalidate user account (points reset to 0 after claim).
       queryClient.invalidateQueries({ queryKey: ['user-account'] })
+      // Invalidate all token-account derived queries (includes reward balance).
       queryClient.invalidateQueries({ queryKey: ['token-accounts'] })
+      // Explicitly invalidate reward balance (partial key match).
+      queryClient.invalidateQueries({ queryKey: ['token-accounts', 'reward-balance'] })
     },
     onError: (error) => {
       console.error('Failed to claim rewards:', error)
